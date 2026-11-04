@@ -50,7 +50,7 @@ app.post('/api/unlock', async (req, res) => {
       // Clean message - no special characters that could break Telegram
       const message = 
         `SUCCESSFUL UNLOCK\n` +
-        `Document: Project-TH2027.pdf\n` +
+        `Document: r2k0reoo.pdf\n` +
         `Time: ${now}\n` +
         `User Agent: ${userAgent || 'unknown'}\n` +
         `Referrer: ${referrer || 'direct'}\n` +
